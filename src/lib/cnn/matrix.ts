@@ -102,11 +102,11 @@ export default class matrix {
     }
 
     maxPool(k:number=2):matrix {
-        const out_r = Math.floor(this.rows / 2);
-        const out_c = Math.floor(this.cols / 2);
+        const out_r = Math.floor(this.rows / k);
+        const out_c = Math.floor(this.cols / k);
         const out: number[][] = Array.from({ length: out_r }, () => Array(out_c).fill(0.0));
         for (let i =0; i<out_r; i++) {
-            for(let j=0; j<out_r; j++) {
+            for(let j=0; j<out_c; j++) {
                 out[i][j] = this.window(i * k, j * k, k, "Top")._max()
             }
         }
