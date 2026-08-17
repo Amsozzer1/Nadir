@@ -1,5 +1,5 @@
 import matrix from "./matrix"
-import { Layer, Mode, r } from "./types"
+import { Layer, Mode, Model, r } from "./types"
 
 export function ranges(scale: number, mode: Mode): r {
     const middle = Math.floor(scale / 2)
@@ -89,3 +89,16 @@ export function classification(
         const probs = softmax(l2)
         return probs;
     }
+
+export function predict(probs: Array<number>): number {
+    let best = 0
+    for (let i=1; i<probs.length; i++) {
+        if (probs[i] > probs[best]) best = i
+    }
+    return best
+}
+
+export function infer(model: Model, input: matrix): Array<number> {
+    const features = feature_extraction(model.layers, [input])
+    return classification(features, model.W1, model.b1, model.W2, model.b2)
+}
