@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import CnnAnimation from "@/components/cnn-animation";
 import { Button } from "@/components/ui/button";
-import { infer, loadWeights, predict, toInput, type Model } from "@/lib/cnn";
+import { infer, loadWeights, predict, toInput, type Model, type Trace } from "@/lib/cnn";
+import type matrix from "@/lib/cnn/matrix";
 
 const SIZE = 280;
 const STROKE = 22;
@@ -14,6 +16,9 @@ export default function DigitCanvas() {
   const [model, setModel] = useState<Model | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [probs, setProbs] = useState<Array<number> | null>(null);
+  const [trace, setTrace] = useState<Trace>([]);
+  const [shot, setShot] = useState<matrix | null>(null);
+  const [run_id, setRunId] = useState(0);
   const [ms, setMs] = useState(0);
 
   useEffect(() => {
@@ -49,6 +54,8 @@ export default function DigitCanvas() {
   function clear() {
     ref.current?.getContext("2d")?.clearRect(0, 0, SIZE, SIZE);
     setProbs(null);
+    setTrace([]);
+    setShot(null);
   }
 
   function run() {
@@ -56,16 +63,22 @@ export default function DigitCanvas() {
     const input = toInput(ref.current);
     if (!input) {
       setProbs(null);
+      setTrace([]);
+      setShot(null);
       return;
     }
+    const next: Trace = [];
     const t = performance.now();
-    const p = infer(model, input);
+    const p = infer(model, input, next);
     setMs(performance.now() - t);
     setProbs(p);
+    setTrace(next);
+    setShot(input);
+    setRunId((n) => n + 1);
   }
 
   return (
-    <div className="flex flex-wrap items-start gap-6">
+    <div className="flex flex-wrap items-start justify-center gap-6">
       <div className="flex flex-col gap-2">
         <canvas
           ref={ref}
@@ -116,6 +129,13 @@ export default function DigitCanvas() {
           </>
         )}
       </div>
+
+      {shot && model && probs && trace.length === 2 && (
+        <div className="w-full max-w-3xl">
+          {/* keyed per run so a new prediction restarts the walkthrough */}
+          <CnnAnimation key={run_id} input={shot} model={model} trace={trace} probs={probs} />
+        </div>
+      )}
     </div>
   );
 }

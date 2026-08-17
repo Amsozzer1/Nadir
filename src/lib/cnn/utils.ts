@@ -1,5 +1,5 @@
 import matrix from "./matrix"
-import { Layer, Mode, Model, r } from "./types"
+import { Layer, Mode, Model, r, Trace } from "./types"
 
 export function ranges(scale: number, mode: Mode): r {
     const middle = Math.floor(scale / 2)
@@ -20,8 +20,9 @@ export function ranges(scale: number, mode: Mode): r {
 }
 
 export function feature_extraction(
-    layers: Array<Layer>, 
-    curr: Array<matrix>, 
+    layers: Array<Layer>,
+    curr: Array<matrix>,
+    trace?: Trace,
 ) {
 
     for (let i=0; i<layers.length; i++) {
@@ -40,14 +41,18 @@ export function feature_extraction(
             out.push(acc)
         }
         curr = []
+        const pre: Array<matrix> = []
+        const activations: Array<matrix> = []
         for (let l=0; l<out.length; l++) {
             const z = out[l]
             if (!z) throw Error("Z cant be null")
             const linear = z?.reLu()
-            // @TODO: store the image in a tmp memory. Used to show in the animation
             const pooled = linear.maxPool(2)
+            pre.push(z)
+            activations.push(linear)
             curr.push(pooled)
         }
+        trace?.push({ layer: i, pre, maps: activations, pooled: curr })
     }
     return curr;
 }
@@ -98,7 +103,7 @@ export function predict(probs: Array<number>): number {
     return best
 }
 
-export function infer(model: Model, input: matrix): Array<number> {
-    const features = feature_extraction(model.layers, [input])
+export function infer(model: Model, input: matrix, trace?: Trace): Array<number> {
+    const features = feature_extraction(model.layers, [input], trace)
     return classification(features, model.W1, model.b1, model.W2, model.b2)
 }
