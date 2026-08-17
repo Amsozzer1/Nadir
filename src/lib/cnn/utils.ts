@@ -43,7 +43,10 @@ export function feature_extraction(
         for (let l=0; l<out.length; l++) {
             const z = out[l]
             if (!z) throw Error("Z cant be null")
-            curr.push(z?.reLu().maxPool(2))
+            const linear = z?.reLu()
+            // @TODO: store the image in a tmp memory. Used to show in the animation
+            const pooled = linear.maxPool(2)
+            curr.push(pooled)
         }
     }
     return curr;
